@@ -1,114 +1,100 @@
 @echo off
 chcp 65001 >nul
-title COLETOR DE INFORMAÇÕES DO PC - JARVIS
+title COLETOR DE INFORMACOES DO PC - JARVIS
 color 0A
 
-:: Data e hora
-set DATA=%date:/=-%
-set HORA=%time::=-%
-set HORA=%HORA: =%
-set ARQ=relatorio_pc_%DATA%_%HORA%.txt
+:: Pasta de saída
+set OUTDIR=C:\Relatorios
+if not exist "%OUTDIR%" mkdir "%OUTDIR%"
+
+:: Data e hora seguras
+for /f "tokens=1-3 delims=/" %%a in ("%date%") do set DATA=%%c-%%b-%%a
+for /f "tokens=1-3 delims=:." %%a in ("%time%") do set HORA=%%a-%%b-%%c
+
+set ARQ=%OUTDIR%\relatorio_pc_%DATA%_%HORA%.txt
 
 echo ========================================== > "%ARQ%"
-echo     RELATÓRIO COMPLETO DO SISTEMA >> "%ARQ%"
+echo     RELATORIO COMPLETO DO SISTEMA >> "%ARQ%"
 echo     Gerado por: JARVIS >> "%ARQ%"
 echo     Data: %date% %time% >> "%ARQ%"
 echo ========================================== >> "%ARQ%"
 echo. >> "%ARQ%"
 
-echo [INFO] Coletando informações do sistema...
-echo.
+echo [INFO] Coletando dados...
 
-:: =========================
-:: SISTEMA OPERACIONAL
-:: =========================
+:: ===============================
+:: SISTEMA
+:: ===============================
 echo ==== SISTEMA OPERACIONAL ==== >> "%ARQ%"
 systeminfo >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
-:: USUÁRIOS
-:: =========================
-echo ==== USUÁRIOS DO SISTEMA ==== >> "%ARQ%"
-net user >> "%ARQ%"
-echo. >> "%ARQ%"
-
-:: =========================
+:: ===============================
 :: CPU
-:: =========================
+:: ===============================
 echo ==== PROCESSADOR (CPU) ==== >> "%ARQ%"
-wmic cpu get name,NumberOfCores,NumberOfLogicalProcessors,MaxClockSpeed >> "%ARQ%"
+powershell -command "Get-CimInstance Win32_Processor | Select Name,NumberOfCores,NumberOfLogicalProcessors,MaxClockSpeed" >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
-:: MEMÓRIA RAM
-:: =========================
-echo ==== MEMÓRIA RAM ==== >> "%ARQ%"
-wmic OS get FreePhysicalMemory,TotalVisibleMemorySize >> "%ARQ%"
-wmic memorychip get Capacity,Speed,Manufacturer >> "%ARQ%"
+:: ===============================
+:: MEMORIA RAM
+:: ===============================
+echo ==== MEMORIA RAM ==== >> "%ARQ%"
+powershell -command "Get-CimInstance Win32_OperatingSystem | Select TotalVisibleMemorySize,FreePhysicalMemory" >> "%ARQ%"
+powershell -command "Get-CimInstance Win32_PhysicalMemory | Select Capacity,Speed,Manufacturer" >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
+:: ===============================
 :: DISCO
-:: =========================
-echo ==== DISCOS E ARMAZENAMENTO ==== >> "%ARQ%"
-wmic diskdrive get Model,Size,InterfaceType,MediaType >> "%ARQ%"
-wmic logicaldisk get Name,FileSystem,FreeSpace,Size >> "%ARQ%"
+:: ===============================
+echo ==== DISCOS ==== >> "%ARQ%"
+powershell -command "Get-CimInstance Win32_DiskDrive | Select Model,Size,InterfaceType,MediaType" >> "%ARQ%"
+powershell -command "Get-CimInstance Win32_LogicalDisk | Select DeviceID,FileSystem,FreeSpace,Size" >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
-:: PLACA DE VÍDEO
-:: =========================
-echo ==== PLACA DE VÍDEO (GPU) ==== >> "%ARQ%"
-wmic path win32_VideoController get name,AdapterRAM,DriverVersion >> "%ARQ%"
+:: ===============================
+:: GPU
+:: ===============================
+echo ==== PLACA DE VIDEO ==== >> "%ARQ%"
+powershell -command "Get-CimInstance Win32_VideoController | Select Name,AdapterRAM,DriverVersion" >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
+:: ===============================
 :: REDE
-:: =========================
+:: ===============================
 echo ==== REDE ==== >> "%ARQ%"
 ipconfig /all >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
-:: PORTAS E CONEXÕES
-:: =========================
-echo ==== PORTAS E CONEXÕES ATIVAS ==== >> "%ARQ%"
+:: ===============================
+:: PORTAS
+:: ===============================
+echo ==== PORTAS ABERTAS ==== >> "%ARQ%"
 netstat -ano >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
-:: SERVIÇOS
-:: =========================
-echo ==== SERVIÇOS EM EXECUÇÃO ==== >> "%ARQ%"
+:: ===============================
+:: SERVICOS
+:: ===============================
+echo ==== SERVICOS ATIVOS ==== >> "%ARQ%"
 sc query >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
-:: PROGRAMAS INSTALADOS
-:: =========================
-echo ==== PROGRAMAS INSTALADOS ==== >> "%ARQ%"
-wmic product get Name,Version >> "%ARQ%"
-echo. >> "%ARQ%"
-
-:: =========================
+:: ===============================
 :: FIREWALL
-:: =========================
-echo ==== STATUS DO FIREWALL ==== >> "%ARQ%"
+:: ===============================
+echo ==== FIREWALL ==== >> "%ARQ%"
 netsh advfirewall show allprofiles >> "%ARQ%"
 echo. >> "%ARQ%"
 
-:: =========================
-:: FINAL
-:: =========================
 echo ========================================== >> "%ARQ%"
-echo      FIM DO RELATÓRIO >> "%ARQ%"
+echo      FIM DO RELATORIO >> "%ARQ%"
 echo ========================================== >> "%ARQ%"
 
 echo.
 echo ==========================================
-echo   RELATÓRIO GERADO COM SUCESSO
-echo   Arquivo: %ARQ%
+echo  RELATORIO GERADO COM SUCESSO
+echo  %ARQ%
 echo ==========================================
 pause
 exit
